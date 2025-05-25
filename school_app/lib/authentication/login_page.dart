@@ -12,7 +12,8 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -30,10 +31,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       duration: const Duration(milliseconds: 1000),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeIn,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
     _animationController.forward();
   }
@@ -69,13 +67,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   void _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      
+
       try {
         final user = await _authService.login(
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        
+
         if (user != null) {
           Navigator.pushReplacement(
             context,
@@ -104,10 +102,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   void _anonymousLogin() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final user = await _authService.signInAnonymously();
-      
+
       if (user != null) {
         Navigator.pushReplacement(
           context,
@@ -136,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -183,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         ),
         const SizedBox(height: 24),
         Text(
-          'Welcome Back!',
+          'Welcome To your Profile ',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -193,10 +191,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         const SizedBox(height: 8),
         const Text(
           'Sign in to continue to your school account',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
       ],
@@ -228,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Password Field
           TextFormField(
             controller: _passwordController,
@@ -259,14 +254,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // Forgot Password
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {
                 // Forgot password functionality can be added here
-                Fluttertoast.showToast(msg: 'Forgot password feature coming soon');
+                Fluttertoast.showToast(
+                  msg: 'Forgot password feature coming soon',
+                );
               },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
@@ -275,15 +272,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
               child: const Text(
                 'Forgot Password?',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),
           const SizedBox(height: 30),
-          
+
           // Login Button
           SizedBox(
             width: double.infinity,
@@ -298,26 +292,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                      : const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Guest Login
           SizedBox(
             width: double.infinity,
@@ -359,10 +354,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.grey,
-        ),
+        style: const TextStyle(fontSize: 14, color: Colors.grey),
         children: [
           const TextSpan(text: "Don't have an account? "),
           TextSpan(
@@ -371,13 +363,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.bold,
             ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                );
-              },
+            recognizer:
+                TapGestureRecognizer()
+                  ..onTap = () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterScreen(),
+                      ),
+                    );
+                  },
           ),
         ],
       ),
