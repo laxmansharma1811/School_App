@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:school_app/authentication/auth_service.dart';
+import 'package:school_app/authentication/auth_service.dart' as auth_service;
 import 'package:school_app/authentication/login_page.dart';
 import 'package:school_app/dashboard/student_dashboard_screen.dart';
 import 'package:school_app/screens/assignment_list_screen.dart';
@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final AuthService _authService = AuthService();
+  final auth_service.AuthService _authService = auth_service.AuthService();
   String? _userRole;
   bool _isLoading = true;
   int _currentIndex = 0;
