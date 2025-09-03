@@ -72,6 +72,12 @@ class AuthService {
     return null;
   }
 
+  // Get current user ID
+  String? getCurrentUserId() {
+    User? user = _auth.currentUser;
+    return user?.uid;
+  }
+
   // Logout
   Future<void> logout() async {
     await _auth.signOut();

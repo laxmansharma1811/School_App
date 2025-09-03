@@ -1,76 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:school_app/authentication/auth_service.dart';
+import 'package:school_app/authentication/signup_page.dart';
+import 'package:school_app/dashboard/home_screen.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/gestures.dart';
-
-// Mock AuthService for this example (replace with your actual AuthService)
-class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  Future<User?> login(String email, String password) async {
-    try {
-      UserCredential result = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return result.user;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  Future<User?> signInAnonymously() async {
-    try {
-      UserCredential result = await _auth.signInAnonymously();
-      return result.user;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  Future<void> sendPasswordResetEmail(String email) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email);
-    } catch (e) {
-      throw e;
-    }
-  }
-}
-
-// Mock HomeScreen for this example
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: const Center(child: Text('Welcome to Home Screen!')),
-    );
-  }
-}
-
-// Mock RegisterScreen for this example
-class RegisterScreen extends StatelessWidget {
-  const RegisterScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
-      body: const Center(child: Text('Sign Up Screen')),
-    );
-  }
-}
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  LoginScreenState createState() => LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   final TextEditingController _emailController = TextEditingController();
@@ -133,10 +75,12 @@ class _LoginScreenState extends State<LoginScreen>
         );
 
         if (user != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
         } else {
           Fluttertoast.showToast(
             msg: 'Login failed. Please check your credentials.',
@@ -165,10 +109,12 @@ class _LoginScreenState extends State<LoginScreen>
       final user = await _authService.signInAnonymously();
 
       if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
       } else {
         Fluttertoast.showToast(
           msg: 'Guest login failed. Please try again.',
@@ -187,74 +133,6 @@ class _LoginScreenState extends State<LoginScreen>
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  void _showForgotPasswordDialog() {
-    final emailController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Reset Password'),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              validator: _validateEmail,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                hintText: 'Enter your registered email',
-                prefixIcon: const Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  try {
-                    setState(() => _isLoading = true);
-                    Navigator.pop(context); // Close dialog
-                    
-                    await _authService.sendPasswordResetEmail(
-                      emailController.text.trim(),
-                    );
-                    
-                    Fluttertoast.showToast(
-                      msg: 'Password reset email sent. Please check your inbox.',
-                      backgroundColor: Colors.green,
-                      textColor: Colors.white,
-                      toastLength: Toast.LENGTH_LONG,
-                    );
-                  } catch (e) {
-                    Fluttertoast.showToast(
-                      msg: 'Error: ${e.toString()}',
-                      backgroundColor: Colors.red,
-                      textColor: Colors.white,
-                    );
-                  } finally {
-                    if (mounted) {
-                      setState(() => _isLoading = false);
-                    }
-                  }
-                }
-              },
-              child: const Text('Send Reset Link'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -296,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen>
           height: 100,
           width: 100,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -307,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         const SizedBox(height: 24),
         Text(
-          'Welcome To your Profile',
+          'Welcome To your Profile ',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -385,7 +263,12 @@ class _LoginScreenState extends State<LoginScreen>
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () => _showForgotPasswordDialog(),
+              onPressed: () {
+                // Forgot password functionality can be added here
+                Fluttertoast.showToast(
+                  msg: 'Forgot password feature coming soon',
+                );
+              },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(50, 30),
@@ -413,22 +296,23 @@ class _LoginScreenState extends State<LoginScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                      : const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(height: 20),
@@ -483,15 +367,16 @@ class _LoginScreenState extends State<LoginScreen>
               color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.bold,
             ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RegisterScreen(),
-                  ),
-                );
-              },
+            recognizer:
+                TapGestureRecognizer()
+                  ..onTap = () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterScreen(),
+                      ),
+                    );
+                  },
           ),
         ],
       ),

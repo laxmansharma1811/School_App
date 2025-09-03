@@ -90,9 +90,12 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> with Single
       final data = assignment.data() as Map<String, dynamic>;
       final title = (data['title'] ?? '').toLowerCase();
       final description = (data['description'] ?? '').toLowerCase();
+      final className = (data['className'] ?? '').toLowerCase();
       final query = _searchQuery.toLowerCase();
       
-      return title.contains(query) || description.contains(query);
+      return title.contains(query) || 
+             description.contains(query) || 
+             className.contains(query);
     }).toList();
   }
 
@@ -390,6 +393,32 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> with Single
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 12),
+                if (data['className'] != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.class_, size: 16, color: Colors.blue),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Class: ${data['className']}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [

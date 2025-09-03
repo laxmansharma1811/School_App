@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:school_app/authentication/auth_service.dart' as auth_service;
 import 'package:school_app/authentication/login_page.dart';
-import 'package:school_app/dashboard/student_dashboard_screen.dart';
 import 'package:school_app/screens/assignment_list_screen.dart';
 import 'package:school_app/screens/attendance_mark_screen.dart';
 import 'package:school_app/screens/student_attendance_screen.dart';
 import 'package:school_app/screens/student_list_screen.dart';
 import 'package:school_app/screens/timetable_list_screen.dart';
 import 'package:school_app/screens/view_timetable_screen.dart';
+import 'package:school_app/screens/profile_page.dart';
+import 'package:school_app/screens/notification_page.dart';
+import 'package:school_app/screens/class_management_screen.dart';
+import 'package:school_app/screens/student_assignment_screen.dart';
+import 'package:school_app/screens/settings_screen.dart';
+import 'package:school_app/services/notification_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final auth_service.AuthService _authService = auth_service.AuthService();
+  final NotificationService _notificationService = NotificationService();
   String? _userRole;
   bool _isLoading = true;
   int _currentIndex = 0;
@@ -243,19 +249,55 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _currentIndex = 2;
-                      });
-                    },
+                  child: Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _currentIndex = 2;
+                          });
+                        },
+                      ),
+                      StreamBuilder<int>(
+                        stream: _notificationService.getUnreadNotificationCount(),
+                        builder: (context, snapshot) {
+                          int unreadCount = snapshot.data ?? 0;
+                          if (unreadCount == 0) return const SizedBox.shrink();
+                          
+                          return Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -327,10 +369,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_userRole == 'admin') {
       return [
         MenuOption(
+          title: 'Manage Classes',
+          icon: Icons.class_,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ClassManagementScreen(),
+                ),
+              ),
+        ),
+        MenuOption(
           title: 'Manage Timetables',
           icon: Icons.calendar_month,
           gradient: const LinearGradient(
-            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+            colors: [Color(0xFF11998e), Color(0xFF38ef7d)],
           ),
           onTap:
               () => Navigator.push(
@@ -344,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           title: 'Manage Students',
           icon: Icons.people,
           gradient: const LinearGradient(
-            colors: [Color(0xFF11998e), Color(0xFF38ef7d)],
+            colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
           ),
           onTap:
               () => Navigator.push(
@@ -372,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           title: 'Mark Attendance',
           icon: Icons.fact_check,
           gradient: const LinearGradient(
-            colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+            colors: [Color(0xFFa8e6cf), Color(0xFF3d8b85)],
           ),
           onTap:
               () => Navigator.push(
@@ -382,9 +438,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
         ),
+        MenuOption(
+          title: 'My Profile',
+          icon: Icons.person,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFffeaa7), Color(0xFFfab1a0)],
+          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfilePage(),
+                ),
+              ),
+        ),
       ];
     } else if (_userRole == 'teacher') {
       return [
+        MenuOption(
+          title: 'My Classes',
+          icon: Icons.class_,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ClassManagementScreen(),
+                ),
+              ),
+        ),
         MenuOption(
           title: 'Manage Students',
           icon: Icons.people,
@@ -431,13 +515,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           title: 'View Timetable',
           icon: Icons.calendar_today,
           gradient: const LinearGradient(
-            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+            colors: [Color(0xFFa8e6cf), Color(0xFF3d8b85)],
           ),
           onTap:
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ViewTimetableScreen(),
+                ),
+              ),
+        ),
+        MenuOption(
+          title: 'My Profile',
+          icon: Icons.person,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFffeaa7), Color(0xFFfab1a0)],
+          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfilePage(),
                 ),
               ),
         ),
@@ -468,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const StudentDashboardScreen(),
+                  builder: (context) => const StudentAssignmentScreen(),
                 ),
               ),
         ),
@@ -483,6 +581,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const StudentAttendanceScreen(),
+                ),
+              ),
+        ),
+        MenuOption(
+          title: 'My Profile',
+          icon: Icons.person,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFa8e6cf), Color(0xFF3d8b85)],
+          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfilePage(),
                 ),
               ),
         ),
@@ -593,122 +705,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildProfilePage() {
-    return SafeArea(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF6C63FF), Color(0xFFF8F9FA)],
-            stops: [0.0, 0.3],
-          ),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 50, color: Color(0xFF6C63FF)),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _userRole?.toUpperCase() ?? 'USER',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 40),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Profile Information',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Text(
-                        'Profile details and settings will be displayed here.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const ProfilePage();
   }
 
   Widget _buildNotificationsPage() {
-    return SafeArea(
-      child: Container(
-        color: const Color(0xFFF8F9FA),
-        child: const Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                'Notifications',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'No new notifications',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const NotificationPage();
   }
 
   Widget _buildSettingsPage() {
-    return SafeArea(
-      child: Container(
-        color: const Color(0xFFF8F9FA),
-        child: const Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                'Settings',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'App settings and preferences will be displayed here.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const SettingsScreen();
   }
 }
 

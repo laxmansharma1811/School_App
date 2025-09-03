@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_app/services/assignment_service.dart';
+import 'package:school_app/services/class_service.dart';
+import 'package:school_app/authentication/auth_service.dart' as auth_service;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 
@@ -16,13 +18,20 @@ class AddAssignmentScreen extends StatefulWidget {
 
 class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTickerProviderStateMixin {
   final AssignmentService _assignmentService = AssignmentService();
+  final ClassService _classService = ClassService();
+  final auth_service.AuthService _authService = auth_service.AuthService();
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   
+  String? _selectedClassId;
+  String? _selectedClassName;
+  List<Map<String, dynamic>> _availableClasses = [];
+  
   DateTime? _deadline;
   bool _isLoading = false;
   bool _formSubmitted = false;
+  String? _userRole;
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -42,11 +51,53 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTi
     );
     _animationController.forward();
     
+    _loadUserRole();
+    _loadAvailableClasses();
+    
     // Populate form if editing an existing assignment
     if (widget.assignmentData != null) {
       _titleController.text = widget.assignmentData!['title'] ?? '';
       _descriptionController.text = widget.assignmentData!['description'] ?? '';
       _deadline = (widget.assignmentData!['deadline'] as Timestamp?)?.toDate();
+      _selectedClassId = widget.assignmentData!['classId'];
+      _selectedClassName = widget.assignmentData!['className'];
+    }
+  }
+
+  void _loadUserRole() async {
+    String? role = await _authService.getUserRole();
+    setState(() {
+      _userRole = role;
+    });
+  }
+
+  void _loadAvailableClasses() async {
+    if (_userRole == 'admin') {
+      // Admin can see all classes
+      _classService.getAllClasses().listen((snapshot) {
+        List<Map<String, dynamic>> classes = [];
+        for (var doc in snapshot.docs) {
+          Map<String, dynamic> classData = doc.data() as Map<String, dynamic>;
+          classData['id'] = doc.id;
+          classes.add(classData);
+        }
+        setState(() {
+          _availableClasses = classes;
+        });
+      });
+    } else {
+      // Teacher can only see their classes
+      _classService.getMyClasses().listen((snapshot) {
+        List<Map<String, dynamic>> classes = [];
+        for (var doc in snapshot.docs) {
+          Map<String, dynamic> classData = doc.data() as Map<String, dynamic>;
+          classData['id'] = doc.id;
+          classes.add(classData);
+        }
+        setState(() {
+          _availableClasses = classes;
+        });
+      });
     }
   }
 
@@ -61,7 +112,7 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTi
   void _saveAssignment() async {
     setState(() => _formSubmitted = true);
     
-    if (_formKey.currentState!.validate() && _deadline != null) {
+    if (_formKey.currentState!.validate() && _deadline != null && _selectedClassId != null) {
       setState(() => _isLoading = true);
       
       try {
@@ -70,6 +121,8 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTi
             title: _titleController.text.trim(),
             description: _descriptionController.text.trim(),
             deadline: _deadline!,
+            classId: _selectedClassId,
+            className: _selectedClassName,
           );
           
           if (mounted) {
@@ -118,7 +171,7 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTi
   }
 
   Future<void> _selectDeadline() async {
-    final picked = await showDateTimePicker(
+    final picked = await _showDateTimePicker(
       context: context,
       initialDate: _deadline ?? DateTime.now(),
       firstDate: DateTime.now(),
@@ -306,6 +359,12 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTi
             ),
             const SizedBox(height: 24),
             
+            // Grade Field
+            _buildSectionTitle('Target Grade', true),
+            const SizedBox(height: 8),
+            _buildClassDropdown(),
+            const SizedBox(height: 24),
+            
             // Deadline Field
             _buildSectionTitle('Deadline', true),
             const SizedBox(height: 8),
@@ -419,57 +478,110 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> with SingleTi
       ),
     );
   }
-}
 
-Future<DateTime?> showDateTimePicker({
-  required BuildContext context,
-  required DateTime initialDate,
-  required DateTime firstDate,
-  required DateTime lastDate,
-}) async {
-  final ThemeData theme = Theme.of(context);
-  
-  final date = await showDatePicker(
-    context: context,
-    initialDate: initialDate,
-    firstDate: firstDate,
-    lastDate: lastDate,
-    builder: (context, child) {
-      return Theme(
-        data: theme.copyWith(
-          colorScheme: theme.colorScheme.copyWith(
-            primary: theme.primaryColor,
+  Future<DateTime?> _showDateTimePicker({
+    required BuildContext context,
+    required DateTime initialDate,
+    required DateTime firstDate,
+    required DateTime lastDate,
+  }) async {
+    final ThemeData theme = Theme.of(context);
+    
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      builder: (context, child) {
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: theme.primaryColor,
+            ),
           ),
-        ),
-        child: child!,
-      );
-    },
-  );
-  
-  if (date == null) return null;
+          child: child!,
+        );
+      },
+    );
+    
+    if (date == null) return null;
 
-  final time = await showTimePicker(
-    context: context,
-    initialTime: TimeOfDay.fromDateTime(initialDate),
-    builder: (context, child) {
-      return Theme(
-        data: theme.copyWith(
-          colorScheme: theme.colorScheme.copyWith(
-            primary: theme.primaryColor,
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDate),
+      builder: (context, child) {
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              primary: theme.primaryColor,
+            ),
           ),
-        ),
-        child: child!,
-      );
-    },
-  );
-  
-  if (time == null) return null;
+          child: child!,
+        );
+      },
+    );
+    
+    if (time == null) return null;
 
-  return DateTime(
-    date.year,
-    date.month,
-    date.day,
-    time.hour,
-    time.minute,
-  );
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+  }
+
+  Widget _buildClassDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedClassId,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.class_),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          hintText: 'Select a class',
+        ),
+        items: _availableClasses.map((Map<String, dynamic> classData) {
+          return DropdownMenuItem<String>(
+            value: classData['id'],
+            child: Text('${classData['className']} - ${classData['section']}'),
+          );
+        }).toList(),
+        onChanged: (String? newValue) {
+          if (newValue != null) {
+            setState(() {
+              _selectedClassId = newValue;
+              // Find the selected class name
+              Map<String, dynamic>? selectedClass = _availableClasses
+                  .firstWhere((cls) => cls['id'] == newValue);
+              _selectedClassName = '${selectedClass['className']} - ${selectedClass['section']}';
+            });
+          }
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please select a class';
+          }
+          return null;
+        },
+      ),
+    );
+  }
 }

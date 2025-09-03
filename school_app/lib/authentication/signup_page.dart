@@ -8,10 +8,10 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  RegisterScreenState createState() => RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
+class RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -88,6 +88,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     return null;
   }
 
+  String _capitalizeString(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
   void _register() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -100,10 +105,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         );
         
         if (user != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
         } else {
           Fluttertoast.showToast(
             msg: 'Registration failed. Please try again.',
@@ -311,7 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   }
 
   Widget _buildRoleSelector() {
-    return Container(
+    return SizedBox(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -331,7 +338,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
                 color: isSelected 
-                    ? role['color'].withOpacity(0.2) 
+                    ? role['color'].withValues(alpha: 0.2)
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
                 border: isSelected
@@ -348,7 +355,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    role['value'].capitalize(),
+                    _capitalizeString(role['value']),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -424,12 +431,5 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         ),
       ),
     );
-  }
-}
-
-// Extension to capitalize string
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
