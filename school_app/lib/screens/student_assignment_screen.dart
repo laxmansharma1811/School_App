@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../widgets/assignment_submission_form.dart';
 
 class StudentAssignmentScreen extends StatefulWidget {
   const StudentAssignmentScreen({super.key});
@@ -28,24 +29,40 @@ class _StudentAssignmentScreenState extends State<StudentAssignmentScreen> {
       User? currentUser = _auth.currentUser;
       if (currentUser == null) return;
 
-      DocumentSnapshot studentProfile = await _firestore
-          .collection('profiles')
+      // First check the users collection for class information
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
           .doc(currentUser.uid)
           .get();
 
-      if (studentProfile.exists) {
-        Map<String, dynamic> data = studentProfile.data() as Map<String, dynamic>;
-        setState(() {
-          _studentClassId = data['classId'];
-          _studentClassName = data['className'];
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        String classId = userData['class'] ?? '';
+
+        if (classId.isNotEmpty) {
+          // Fetch class details from classes collection
+          DocumentSnapshot classDoc = await _firestore
+              .collection('classes')
+              .doc(classId)
+              .get();
+
+          if (classDoc.exists) {
+            Map<String, dynamic> classData = classDoc.data() as Map<String, dynamic>;
+            setState(() {
+              _studentClassId = classId;
+              _studentClassName = classData['className'] ?? 'Unknown Class';
+              _isLoading = false;
+            });
+            return;
+          }
+        }
       }
+      
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
+      print('Error loading class info: $e');
       setState(() {
         _isLoading = false;
       });
@@ -420,88 +437,192 @@ class _StudentAssignmentScreenState extends State<StudentAssignmentScreen> {
     );
   }
 
-  void _showAssignmentDetails(String assignmentId, Map<String, dynamic> data) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          data['title'] ?? 'Assignment Details',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Description:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                data['description'] ?? 'No description provided',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Teacher:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                data['teacherName'] ?? 'Unknown',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Deadline:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _formatDate((data['deadline'] as Timestamp).toDate()),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: _getDeadlineColor((data['deadline'] as Timestamp).toDate()),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+  void _showAssignmentDetails(String assignmentId, Map<String, dynamic> data) async {
+    try {
+      // Check if the assignment has been submitted
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) return;
+
+      final submissionDoc = await _firestore
+          .collection('assignments')
+          .doc(assignmentId)
+          .collection('submissions')
+          .doc(userId)
+          .get();
+
+      final bool hasSubmitted = submissionDoc.exists;
+      final DateTime deadline = (data['deadline'] as Timestamp).toDate();
+      final bool isOverdue = DateTime.now().isAfter(deadline);
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            data['title'] ?? 'Assignment Details',
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Here you could navigate to a submission screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Assignment submission feature coming soon!'),
-                  backgroundColor: Color(0xFF6C63FF),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasSubmitted)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Submitted',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                              Text(
+                                'on ${_formatDate((submissionDoc.data()?['submittedAt'] as Timestamp).toDate())}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (isOverdue && !hasSubmitted)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.red.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This assignment is overdue',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Text(
+                  'Description:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
-              foregroundColor: Colors.white,
+                const SizedBox(height: 8),
+                Text(
+                  data['description'] ?? 'No description provided',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Teacher:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  data['teacherName'] ?? 'Unknown',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Deadline:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _formatDate(deadline),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: _getDeadlineColor(deadline),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            child: const Text('Submit Assignment'),
           ),
-        ],
-      ),
-    );
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            if (!hasSubmitted)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AssignmentSubmissionForm(
+                        assignmentId: assignmentId,
+                        assignmentData: data,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Submit Assignment'),
+              ),
+            if (hasSubmitted)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AssignmentSubmissionForm(
+                        assignmentId: assignmentId,
+                        assignmentData: data,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('View/Edit Submission'),
+              ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('Error showing assignment details: $e');
+    }
   }
 }

@@ -16,7 +16,6 @@ class ProfilePageState extends State<ProfilePage> {
   // Common fields
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _dateOfBirthController = TextEditingController();
@@ -50,7 +49,6 @@ class ProfilePageState extends State<ProfilePage> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _dateOfBirthController.dispose();
@@ -77,7 +75,6 @@ class ProfilePageState extends State<ProfilePage> {
       if (profile != null) {
         _firstNameController.text = profile['firstName'] ?? '';
         _lastNameController.text = profile['lastName'] ?? '';
-        _emailController.text = profile['email'] ?? '';
         _phoneController.text = profile['phone'] ?? '';
         _addressController.text = profile['address'] ?? '';
         _dateOfBirthController.text = profile['dateOfBirth'] ?? '';
@@ -111,7 +108,6 @@ class ProfilePageState extends State<ProfilePage> {
       bool success = await _profileService.updateProfile(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         address: _addressController.text.trim(),
         dateOfBirth: _dateOfBirthController.text.trim(),
@@ -262,7 +258,6 @@ class ProfilePageState extends State<ProfilePage> {
             Expanded(child: _buildTextField('Last Name', _lastNameController, Icons.person)),
           ],
         ),
-        _buildTextField('Email', _emailController, Icons.email, enabled: false),
         _buildTextField('Phone', _phoneController, Icons.phone),
         _buildTextField('Address', _addressController, Icons.location_on, maxLines: 2),
         _buildDateField('Date of Birth', _dateOfBirthController),

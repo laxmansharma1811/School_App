@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:school_app/services/assignment_service.dart';
 import 'package:school_app/services/submission_service.dart';
+import 'package:school_app/screens/view_timetable_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -104,6 +105,33 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> with Si
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          // Get student's class from Firestore
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user!.uid)
+              .get();
+          final className = userDoc.data()?['class'] ?? '';
+          
+          if (className.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ViewTimetableScreen(),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Class information not found'),
+              ),
+            );
+          }
+        },
+        icon: const Icon(Icons.calendar_today),
+        label: const Text('View Timetable'),
+      ),
       body: SafeArea(
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {

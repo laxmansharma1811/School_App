@@ -512,7 +512,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
         ),
         MenuOption(
-          title: 'View Timetable',
+          title: 'Manage Timetables',
           icon: Icons.calendar_today,
           gradient: const LinearGradient(
             colors: [Color(0xFFa8e6cf), Color(0xFF3d8b85)],
@@ -521,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ViewTimetableScreen(),
+                  builder: (context) => const TimetableListScreen(),
                 ),
               ),
         ),

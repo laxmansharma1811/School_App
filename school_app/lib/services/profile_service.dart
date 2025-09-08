@@ -27,7 +27,6 @@ class ProfileService {
   Future<bool> updateProfile({
     required String firstName,
     required String lastName,
-    required String email,
     required String phone,
     required String address,
     required String dateOfBirth,
@@ -53,7 +52,6 @@ class ProfileService {
         Map<String, dynamic> profileData = {
           'firstName': firstName,
           'lastName': lastName,
-          'email': email,
           'phone': phone,
           'address': address,
           'dateOfBirth': dateOfBirth,

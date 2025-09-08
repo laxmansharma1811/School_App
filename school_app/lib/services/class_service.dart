@@ -74,8 +74,6 @@ class ClassService {
     return _firestore
         .collection('classes')
         .where('isActive', isEqualTo: true)
-        .orderBy('className')
-        .orderBy('section')
         .snapshots();
   }
 
@@ -85,7 +83,6 @@ class ClassService {
         .collection('classes')
         .where('teacherId', isEqualTo: teacherId)
         .where('isActive', isEqualTo: true)
-        .orderBy('className')
         .snapshots();
   }
 

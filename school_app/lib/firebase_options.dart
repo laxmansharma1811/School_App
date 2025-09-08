@@ -50,19 +50,21 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDAjebhNxWusx8M43muiaa-EvXHiDFJY98',
-    appId: '1:408345330652:web:a201c9b679a0d1c97c0519',
-    messagingSenderId: '408345330652',
-    projectId: 'blogapp-29120',
-    authDomain: 'blogapp-29120.firebaseapp.com',
-    storageBucket: 'blogapp-29120.firebasestorage.app',
+    apiKey: 'AIzaSyDfBS--n6dRzIQ5-enx6MEqiDN2X2jkpiM',
+    appId: '1:177840179178:web:4361717fb2a4a8e6dd1493',
+    messagingSenderId: '177840179178',
+    projectId: 'schol-app',
+    authDomain: 'schol-app.firebaseapp.com',
+    storageBucket: 'schol-app.firebasestorage.app',
+    measurementId: 'G-6T5FGTVE1X',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBOjhDwrxVWxLZNA5Q3mqAnY4uPLU7jXOI',
-    appId: '1:408345330652:android:00d469d9cba6936e7c0519',
-    messagingSenderId: '408345330652',
-    projectId: 'blogapp-29120',
-    storageBucket: 'blogapp-29120.firebasestorage.app',
+    apiKey: 'AIzaSyDXEgnnqzUYG28bOGruzdqzQR2LMjjTqeo',
+    appId: '1:177840179178:android:5fa0e4597067ed3ddd1493',
+    messagingSenderId: '177840179178',
+    projectId: 'schol-app',
+    storageBucket: 'schol-app.firebasestorage.app',
   );
+
 }

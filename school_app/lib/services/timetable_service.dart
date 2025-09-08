@@ -1,68 +1,57 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import '../models/timetable_entry.dart';
 
 class TimetableService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Add a new timetable
-  Future<void> addTimetable({
-    required String className,
-    required String day,
-    required String time,
-    required String subject,
-  }) async {
+  // Add a new timetable entry
+  Future<void> addTimetableEntry(TimetableEntry entry) async {
     try {
-      await _firestore.collection('timetables').add({
-        'className': className,
-        'day': day,
-        'time': time,
-        'subject': subject,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      Fluttertoast.showToast(msg: 'Timetable added successfully');
+      await _firestore.collection('timetable').add(entry.toMap());
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Failed to add timetable: $e');
+      throw Exception('Failed to add timetable entry: $e');
     }
   }
 
-  // Update an existing timetable
-  Future<void> updateTimetable({
-    required String timetableId,
-    required String className,
-    required String day,
-    required String time,
-    required String subject,
-  }) async {
+  // Update an existing timetable entry
+  Future<void> updateTimetableEntry(TimetableEntry entry) async {
     try {
-      await _firestore.collection('timetables').doc(timetableId).update({
-        'className': className,
-        'day': day,
-        'time': time,
-        'subject': subject,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      Fluttertoast.showToast(msg: 'Timetable updated successfully');
+      await _firestore
+          .collection('timetable')
+          .doc(entry.id)
+          .update(entry.toMap());
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Failed to update timetable: $e');
+      throw Exception('Failed to update timetable entry: $e');
     }
   }
 
-  // Delete a timetable
-  Future<void> deleteTimetable(String timetableId) async {
+  // Delete a timetable entry
+  Future<void> deleteTimetableEntry(String entryId) async {
     try {
-      await _firestore.collection('timetables').doc(timetableId).delete();
-      Fluttertoast.showToast(msg: 'Timetable deleted successfully');
+      await _firestore.collection('timetable').doc(entryId).delete();
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Failed to delete timetable: $e');
+      throw Exception('Failed to delete timetable entry: $e');
     }
   }
 
-  // Get stream of timetables for real-time updates
-  Stream<QuerySnapshot> getTimetables() {
+  // Get timetable entries for a specific class
+  Stream<List<TimetableEntry>> getTimetableForClass(String className) {
     return _firestore
-        .collection('timetables')
-        .orderBy('day')
-        .orderBy('time')
-        .snapshots();
+        .collection('timetable')
+        .where('className', isEqualTo: className)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => TimetableEntry.fromDocument(doc))
+            .toList());
+  }
+
+  // Get all timetable entries
+  Stream<List<TimetableEntry>> getAllTimetableEntries() {
+    return _firestore
+        .collection('timetable')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => TimetableEntry.fromDocument(doc))
+            .toList());
   }
 }

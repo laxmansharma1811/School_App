@@ -10,18 +10,27 @@ class AttendanceService {
     required String date,
     required String studentId,
     required bool isPresent,
+    String? markedBy,
+    String? notes,
   }) async {
     try {
+      // Ensure date is in MM/DD/YYYY format
+      DateTime parsedDate = DateTime.parse(date);
+      String formattedDate = "${parsedDate.month}/${parsedDate.day}/${parsedDate.year}";
+      
       await _firestore.collection('attendance').add({
         'className': className,
-        'date': date, // Format: YYYY-MM-DD
+        'date': formattedDate,
         'studentId': studentId,
         'isPresent': isPresent,
-        'markedAt': FieldValue.serverTimestamp(),
+        'markedBy': markedBy,
+        'notes': notes,
+        'timestamp': FieldValue.serverTimestamp(),
       });
       Fluttertoast.showToast(msg: 'Attendance marked successfully');
     } catch (e) {
       Fluttertoast.showToast(msg: 'Failed to mark attendance: $e');
+      throw e; // Rethrow to handle in UI
     }
   }
 
